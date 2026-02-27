@@ -1,0 +1,103 @@
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
+import Header from "../components/header/Header";
+import Footer from "../components/footer/Footer";
+import ProductImageGallery from "../components/product/ProductImageGallery";
+import ProductInfo from "../components/product/ProductInfo";
+import ProductDescription from "../components/product/ProductDescription";
+import ProductCarousel from "../components/content/ProductCarousel";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
+
+const ProductDetail = () => {
+  const { productId } = useParams();
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const res = await fetch(`http://localhost:5002/api/products/${productId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setProduct(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch product:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (productId) fetchProduct();
+  }, [productId]);
+
+  if (loading) return <div className="min-h-screen pt-32 text-center text-foreground font-light">Loading product...</div>;
+  if (!product) return <div className="min-h-screen pt-32 text-center text-foreground font-light">Product not found</div>;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+
+      <main className="pt-6">
+        <section className="w-full px-6">
+          {/* Breadcrumb - Show above image on smaller screens */}
+          <div className="lg:hidden mb-6">
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link to="/">Home</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link to={`/category/${product.category.toLowerCase()}`}>{product.category}</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{product.name}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+            <ProductImageGallery images={[product.image, product.hoverImage].map(img => img?.startsWith('/uploads') ? `http://localhost:5002${img}` : img)} />
+
+            <div className="lg:pl-12 mt-8 lg:mt-0 lg:sticky lg:top-6 lg:h-fit">
+              <ProductInfo product={product} />
+              <ProductDescription />
+            </div>
+          </div>
+        </section>
+
+        <section className="w-full mt-16 lg:mt-24">
+          <div className="mb-4 px-6">
+            <h2 className="text-sm font-light text-foreground">You might also like</h2>
+          </div>
+          <ProductCarousel />
+        </section>
+
+        <section className="w-full">
+          <div className="mb-4 px-6">
+            <h2 className="text-sm font-light text-foreground">Our other {product.category}</h2>
+          </div>
+          <ProductCarousel />
+        </section>
+      </main>
+
+      <Footer />
+    </div>
+  );
+};
+
+export default ProductDetail;
